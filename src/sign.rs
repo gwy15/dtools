@@ -1,9 +1,13 @@
+use std::time::SystemTime;
+
 use anyhow::Result;
 use reqwest::{
     header::{self, HeaderMap, HeaderValue},
     Client,
 };
 use serde::Deserialize;
+use serde_json::json;
+use uuid::Uuid;
 
 lazy_static::lazy_static! {
     static ref APP_VERSION: &'static str = "2.3.0";
@@ -21,8 +25,17 @@ lazy_static::lazy_static! {
     };
 }
 
+#[derive(Debug, Deserialize)]
+struct Character {
+    pub game_biz: String,
+    pub game_uid: String,
+    pub nickname: String,
+    pub region_name: String,
+}
+
 pub struct Signer {
     client: Client,
+    uuid: String,
 }
 impl Signer {
     pub fn new(cookies: String) -> Result<Self> {
@@ -30,26 +43,32 @@ impl Signer {
         headers.insert(header::COOKIE, HeaderValue::from_str(&cookies)?);
 
         let client = Client::builder().default_headers(headers).build()?;
+        debug!("client built.");
 
-        info!("client built.");
+        let uuid = Uuid::new_v3(&uuid::Uuid::NAMESPACE_URL, cookies.as_bytes())
+            .to_simple()
+            .encode_upper(&mut Uuid::encode_buffer())
+            .to_string();
 
-        Ok(Self { client })
+        Ok(Self { client, uuid })
     }
     pub async fn sign(self) -> Result<()> {
-        let uid = self.get_uid().await?;
+        let uids = self.get_uids().await?;
+        for uid in uids {
+            self.sign_character(uid).await?;
+        }
         Ok(())
     }
 
-    async fn get_uid(&self) -> Result<i64> {
-        static URL: &'static str =
-            "https://api-takumi.mihoyo.com/binding/api/getUserGameRolesByCookie";
+    async fn get_uids(&self) -> Result<Vec<Character>> {
+        static URL: &str = "https://api-takumi.mihoyo.com/binding/api/getUserGameRolesByCookie";
         let r = self
             .client
             .get(URL)
             .query(&[("game_biz", "hk4e_cn")])
             .send()
             .await?;
-        info!("get uid: response received： {:?}", r);
+        debug!("get uid: response received： {:?}", r);
 
         #[derive(Debug, Deserialize)]
         struct Response {
@@ -61,21 +80,70 @@ impl Signer {
         struct Data {
             pub list: Vec<Character>,
         }
-        #[derive(Debug, Deserialize)]
-        struct Character {
-            pub game_biz: String,
-            pub game_uid: String,
-            pub nickname: String,
-            pub region_name: String,
-        }
 
         let response: Response = r.json().await?;
-        info!("response: {:?}", response);
+        debug!("response: {:?}", response);
         if response.retcode != 0 || response.data.is_none() {
             return Err(anyhow::anyhow!("请求用户角色返回：{}", response.message));
         }
+        // safe here
         let chars = response.data.unwrap().list;
-        info!("characters: {:?}", chars);
-        Ok(1)
+        debug!("characters: {:?}", chars);
+        Ok(chars)
+    }
+
+    fn generate_ds() -> String {
+        static SALT: &str = "h8w582wxwgqvahcdkpvdhbh2w9casgfl";
+        static RANDOM: &str = "114514";
+        let t: u64 = SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        let sign = format!(
+            "{:x}",
+            md5::compute(format!(
+                "salt={salt}&t={t}&r={r}",
+                salt = SALT,
+                t = t,
+                r = RANDOM
+            ))
+        );
+        format!("{},{},{}", t, RANDOM, sign)
+    }
+
+    async fn sign_character(&self, char: Character) -> Result<()> {
+        static URL: &str = "https://api-takumi.mihoyo.com/event/bbs_sign_reward/sign";
+        info!("准备签到角色 {}", char.nickname);
+
+        let response = self
+            .client
+            .post(URL)
+            .json(&json!({
+                "act_id": "e202009291139501",
+                "region": "cn_gf01",
+                "uid": char.game_uid
+            }))
+            .header("x-rpc-device_id", HeaderValue::from_str(&self.uuid)?)
+            .header("x-rpc-client_type", HeaderValue::from_static("5"))
+            .header("DS", HeaderValue::from_str(&Self::generate_ds())?)
+            .send()
+            .await?;
+
+        #[derive(Debug, Deserialize)]
+        struct Response {
+            pub retcode: i64,
+            pub message: String,
+        }
+        let response: Response = response.json().await?;
+        if response.retcode != 0 {
+            error!("签到错误：{:?}", response);
+            return Err(anyhow::anyhow!(
+                "角色 {} 签到错误：{}",
+                char.nickname,
+                response.message
+            ));
+        }
+        info!("角色 {} 签到成功", char.nickname);
+        Ok(())
     }
 }

@@ -15,8 +15,6 @@ impl Notifier {
 
     #[allow(unused)]
     pub async fn notify(&self, receiver: String, title: String, body: String) -> Result<()> {
-        // DEBUG
-        return Ok(());
         let message = Message::builder()
             .from(Mailbox::new(None, self.config.sender.parse()?))
             .to(Mailbox::new(None, receiver.parse()?))
@@ -30,7 +28,9 @@ impl Notifier {
 
         let r = mailer.send(message).await?;
 
-        info!("send email to {}: {:?}", receiver, r);
+        debug!("send email to {}: {:?}", receiver, r);
+
+        info!("发送通知邮件到 {} 完成", receiver);
 
         Ok(())
     }

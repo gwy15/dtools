@@ -4,7 +4,6 @@ use std::{
 };
 
 use serde::Deserialize;
-use toml;
 
 #[derive(Debug, Deserialize)]
 pub struct Notification {

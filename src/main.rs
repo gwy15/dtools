@@ -44,7 +44,7 @@ async fn handle_user(user: User, notifier: &Notifier) {
 #[tokio::main]
 async fn main() -> Result<()> {
     log4rs::init_file("./log4rs.yml", Default::default())?;
-    info!("logger initialized.");
+    debug!("logger initialized.");
     let config = Config::new()?;
     let notifier = Notifier::new(config.notification);
     for user in config.users {
