@@ -14,7 +14,7 @@ impl Notifier {
     }
 
     #[allow(unused)]
-    pub async fn notify(&self, receiver: String, title: String, body: String) -> Result<()> {
+    pub async fn notify(&self, receiver: &str, title: String, body: String) -> Result<()> {
         let message = Message::builder()
             .from(Mailbox::new(None, self.config.sender.parse()?))
             .to(Mailbox::new(None, receiver.parse()?))
@@ -34,18 +34,4 @@ impl Notifier {
 
         Ok(())
     }
-}
-
-#[tokio::test]
-async fn test_send_mail() {
-    let config = crate::config::Config::new().unwrap();
-    let notifier = Notifier::new(config.notification);
-    notifier
-        .notify(
-            config.master,
-            "成功跑通啦".to_string(),
-            "这是内文".to_string(),
-        )
-        .await
-        .unwrap();
 }

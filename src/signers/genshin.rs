@@ -33,33 +33,20 @@ struct Character {
     pub region_name: String,
 }
 
+/// 配置
+#[derive(Debug, Deserialize)]
+pub struct Config {
+    pub cookies: String,
+    pub email: String,
+}
+
+/// 逻辑
 pub struct Signer {
     client: Client,
     uuid: String,
+    notice_receiver: String,
 }
 impl Signer {
-    pub fn new(cookies: String) -> Result<Self> {
-        let mut headers = HEADERS.clone();
-        headers.insert(header::COOKIE, HeaderValue::from_str(&cookies)?);
-
-        let client = Client::builder().default_headers(headers).build()?;
-        debug!("client built.");
-
-        let uuid = Uuid::new_v3(&uuid::Uuid::NAMESPACE_URL, cookies.as_bytes())
-            .to_simple()
-            .encode_upper(&mut Uuid::encode_buffer())
-            .to_string();
-
-        Ok(Self { client, uuid })
-    }
-    pub async fn sign(self) -> Result<()> {
-        let uids = self.get_uids().await?;
-        for uid in uids {
-            self.sign_character(uid).await?;
-        }
-        Ok(())
-    }
-
     async fn get_uids(&self) -> Result<Vec<Character>> {
         static URL: &str = "https://api-takumi.mihoyo.com/binding/api/getUserGameRolesByCookie";
         let r = self
@@ -144,6 +131,47 @@ impl Signer {
             ));
         }
         info!("角色 {} 签到成功", char.nickname);
+        Ok(())
+    }
+}
+
+#[async_trait::async_trait]
+impl super::Signer for Signer {
+    type Config = Config;
+
+    fn name() -> String {
+        "原神".to_string()
+    }
+
+    fn new(config: Config) -> Result<Self> {
+        let cookies = &config.cookies;
+        let mut headers = HEADERS.clone();
+        headers.insert(header::COOKIE, HeaderValue::from_str(cookies)?);
+
+        let client = Client::builder().default_headers(headers).build()?;
+        debug!("client built.");
+
+        let uuid = Uuid::new_v3(&uuid::Uuid::NAMESPACE_URL, cookies.as_bytes())
+            .to_simple()
+            .encode_upper(&mut Uuid::encode_buffer())
+            .to_string();
+
+        Ok(Self {
+            client,
+            uuid,
+            notice_receiver: config.email,
+        })
+    }
+
+    fn notice_receiver(&self) -> &str {
+        self.notice_receiver.as_str()
+    }
+
+    async fn sign(&self) -> Result<()> {
+        let uids = self.get_uids().await?;
+        for uid in uids {
+            self.sign_character(uid).await?;
+        }
         Ok(())
     }
 }

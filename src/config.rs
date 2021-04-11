@@ -1,3 +1,5 @@
+//! Settings
+
 use std::{
     fs::File,
     io::{BufReader, Read},
@@ -14,16 +16,10 @@ pub struct Notification {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct User {
-    pub cookies: String,
-    pub email: String,
-}
-
-#[derive(Debug, Deserialize)]
 pub struct Config {
     pub master: String,
     pub notification: Notification,
-    pub users: Vec<User>,
+    pub genshin: Vec<crate::signers::genshin::Config>,
 }
 
 impl Config {
@@ -55,13 +51,13 @@ pswd = "pswd"
 host = "example.com"
 port = 1234
 
-[[users]]
+[[genshin]]
 cookies = "123"
 email = "123@example.com"
 
     "#;
     let c = Config::from_str(s).unwrap();
     assert_eq!(c.notification.sender, "example@example.com");
-    assert_eq!(c.users.len(), 1);
-    assert_eq!(c.users[0].email, "123@example.com");
+    assert_eq!(c.genshin.len(), 1);
+    assert_eq!(c.genshin[0].email, "123@example.com");
 }

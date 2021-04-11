@@ -3,42 +3,53 @@ extern crate log;
 
 mod config;
 mod notifier;
-mod sign;
+mod signers;
 
 use anyhow::Result;
-use config::{Config, User};
+use config::Config;
 use notifier::Notifier;
-use sign::Signer;
+use signers::Signer;
 
-async fn try_sign(cookies: String) -> Result<()> {
-    Signer::new(cookies)?.sign().await
-}
+async fn run<S, Config, It>(configs: It, notifier: &Notifier)
+where
+    It: Iterator<Item = Config>,
+    S: Signer<Config = Config>,
+{
+    for config in configs {
+        let signer = S::new(config);
+        let signer = match signer {
+            Ok(signer) => signer,
+            Err(e) => {
+                warn!("无法初始化 signer {}: {}", S::name(), e,);
+                continue;
+            }
+        };
+        let sign_result = signer.sign().await;
 
-async fn handle_user(user: User, notifier: &Notifier) {
-    match try_sign(user.cookies).await {
-        Ok(_) => {
-            notifier
-                .notify(
-                    user.email,
-                    "原神签到成功".to_string(),
-                    "原神签到成功啦".to_string(),
-                )
-                .await
-        }
-        Err(e) => {
-            error!("签到失败: {}", e);
-            notifier
-                .notify(
-                    user.email,
-                    "【签到失败】原神签到失败，请手动补签".to_string(),
-                    format!("失败原因：{:?}", e),
-                )
-                .await
+        let notice_result = match sign_result {
+            Ok(_) => {
+                notifier
+                    .notify(
+                        signer.notice_receiver(),
+                        signer.success_msg(),
+                        signer.success_body(),
+                    )
+                    .await
+            }
+            Err(e) => {
+                notifier
+                    .notify(
+                        signer.notice_receiver(),
+                        signer.fail_msg(&e),
+                        signer.fail_body(&e),
+                    )
+                    .await
+            }
+        };
+        if let Err(err) = notice_result {
+            error!("发送邮件失败：{:?}", err);
         }
     }
-    .unwrap_or_else(|e| {
-        error!("发送邮件失败？？{:?}", e);
-    });
 }
 
 #[tokio::main]
@@ -47,8 +58,12 @@ async fn main() -> Result<()> {
     debug!("logger initialized.");
     let config = Config::new()?;
     let notifier = Notifier::new(config.notification);
-    for user in config.users {
-        handle_user(user, &notifier).await;
-    }
+
+    run::<signers::genshin::Signer, signers::genshin::Config, _>(
+        config.genshin.into_iter(),
+        &notifier,
+    )
+    .await;
+
     Ok(())
 }
