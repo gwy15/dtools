@@ -20,7 +20,7 @@ where
         let signer = match signer {
             Ok(signer) => signer,
             Err(e) => {
-                warn!("无法初始化 signer {}: {}", S::name(), e,);
+                warn!("无法初始化 signer: {}", e);
                 continue;
             }
         };

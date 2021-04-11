@@ -1,13 +1,7 @@
 use std::time::SystemTime;
-
-use anyhow::Result;
-use reqwest::{
-    header::{self, HeaderMap, HeaderValue},
-    Client,
-};
-use serde::Deserialize;
-use serde_json::json;
 use uuid::Uuid;
+
+use super::prelude::*;
 
 lazy_static::lazy_static! {
     static ref APP_VERSION: &'static str = "2.3.0";
@@ -135,11 +129,11 @@ impl Signer {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl super::Signer for Signer {
     type Config = Config;
 
-    fn name() -> String {
+    fn name(&self) -> String {
         "原神".to_string()
     }
 
