@@ -1,4 +1,5 @@
 pub mod genshin;
+pub mod nexus_pt;
 
 mod prelude {
     pub use anyhow::{Error, Result};
@@ -16,6 +17,7 @@ use prelude::{Error, Result};
 #[async_trait::async_trait]
 pub trait Signer: Sized {
     type Config;
+    type Outcome;
 
     /// 签到器名字，如 “原神”
     fn name(&self) -> String;
@@ -25,17 +27,20 @@ pub trait Signer: Sized {
 
     fn new(config: Self::Config) -> Result<Self>;
 
-    async fn sign(&self) -> Result<()>;
+    async fn sign(&self) -> Result<Self::Outcome>;
 
-    fn success_msg(&self) -> String {
+    fn success_msg(&self, _outcome: &Self::Outcome) -> String {
+        debug!("{} 签到成功 (user {})", self.name(), self.notice_receiver());
         format!("{} 签到成功", self.name())
     }
 
-    fn success_body(&self) -> String {
+    fn success_body(&self, _outcome: &Self::Outcome) -> String {
         format!("{} 签到成功啦", self.name())
     }
 
-    fn fail_msg(&self, _e: &Error) -> String {
+    fn fail_msg(&self, e: &Error) -> String {
+        debug!("{} 签到失败 (user {})", self.name(), self.notice_receiver());
+        debug!("错误原因：{}", e);
         format!("【签到失败】{} 签到失败，请手动补签！", self.name())
     }
 

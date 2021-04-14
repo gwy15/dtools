@@ -132,6 +132,7 @@ impl Signer {
 #[async_trait]
 impl super::Signer for Signer {
     type Config = Config;
+    type Outcome = ();
 
     fn name(&self) -> String {
         "原神".to_string()

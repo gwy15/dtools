@@ -1059,6 +1059,7 @@ dependencies = [
  "log",
  "log4rs",
  "md5",
+ "regex",
  "reqwest",
  "serde",
  "serde_json",

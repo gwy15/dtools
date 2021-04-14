@@ -1,5 +1,7 @@
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate anyhow;
 
 mod config;
 mod notifier;
@@ -10,10 +12,10 @@ use config::Config;
 use notifier::Notifier;
 use signers::Signer;
 
-async fn run<S, Config, It>(configs: It, notifier: &Notifier)
+async fn run<S, Config, Outcome, It>(configs: It, notifier: &Notifier)
 where
     It: Iterator<Item = Config>,
-    S: Signer<Config = Config>,
+    S: Signer<Config = Config, Outcome = Outcome>,
 {
     for config in configs {
         let signer = S::new(config);
@@ -27,12 +29,12 @@ where
         let sign_result = signer.sign().await;
 
         let notice_result = match sign_result {
-            Ok(_) => {
+            Ok(outcome) => {
                 notifier
                     .notify(
                         signer.notice_receiver(),
-                        signer.success_msg(),
-                        signer.success_body(),
+                        signer.success_msg(&outcome),
+                        signer.success_body(&outcome),
                     )
                     .await
             }
@@ -59,11 +61,9 @@ async fn main() -> Result<()> {
     let config = Config::new()?;
     let notifier = Notifier::new(config.notification);
 
-    run::<signers::genshin::Signer, signers::genshin::Config, _>(
-        config.genshin.into_iter(),
-        &notifier,
-    )
-    .await;
+    run::<signers::genshin::Signer, _, _, _>(config.genshin.into_iter(), &notifier).await;
+
+    run::<signers::nexus_pt::Signer, _, _, _>(config.pt.into_iter(), &notifier).await;
 
     Ok(())
 }

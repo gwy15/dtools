@@ -5,6 +5,7 @@ use std::{
     io::{BufReader, Read},
 };
 
+use crate::signers;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -19,7 +20,10 @@ pub struct Notification {
 pub struct Config {
     pub master: String,
     pub notification: Notification,
-    pub genshin: Vec<crate::signers::genshin::Config>,
+    #[serde(default)]
+    pub genshin: Vec<signers::genshin::Config>,
+    #[serde(default)]
+    pub pt: Vec<signers::nexus_pt::Config>,
 }
 
 impl Config {
