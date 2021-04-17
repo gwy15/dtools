@@ -25,7 +25,7 @@ appenders:
       pattern: "{date(%Y-%m-%d %H:%M:%S%.f %Z)} [{level}] (({target}:{line})) - {message}{n}"
 
 root:
-  level: info
+  level: debug
   appenders:
     - file_appender
     - console_appender

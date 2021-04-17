@@ -1,10 +1,9 @@
-pub mod genshin;
-pub mod nexus_pt;
-
 mod prelude {
+    pub use crate::utils;
     pub use anyhow::{Error, Result};
     pub use async_trait::async_trait;
-    pub use reqwest::{
+    pub use regex::Regex;
+    pub use request::{
         header::{self, HeaderMap, HeaderValue},
         Client,
     };
@@ -48,3 +47,7 @@ pub trait Signer: Sized {
         format!("失败原因：{:?}", e)
     }
 }
+
+pub mod genshin;
+pub mod nexus_pt;
+pub mod v2ex;

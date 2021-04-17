@@ -17,12 +17,6 @@ pub struct Signer {
     email: String,
 }
 impl Signer {
-    fn header(cookie: &str) -> Result<HeaderMap> {
-        let mut header = HeaderMap::new();
-        header.append(header::COOKIE, cookie.parse()?);
-        Ok(header)
-    }
-
     pub fn regex_match(body: &str) -> Result<String, String> {
         let body = regex::Regex::new(r"<(/?)b>")
             .unwrap()
@@ -48,9 +42,10 @@ impl super::Signer for Signer {
     type Outcome = String;
 
     fn new(config: Self::Config) -> Result<Self> {
-        let client = Client::builder()
-            .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36")
-            .default_headers(Self::header(&config.cookies)?)
+        let client = utils::client_builder()
+            .default_headers(header! {
+                header::COOKIE => config.cookies,
+            })
             .build()?;
 
         Ok(Self {
