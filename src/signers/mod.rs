@@ -29,8 +29,14 @@ pub trait Signer: Sized {
     async fn sign(&self) -> Result<Self::Outcome>;
 
     fn success_msg(&self, _outcome: &Self::Outcome) -> String {
-        debug!("{} 签到成功 (user {})", self.name(), self.notice_receiver());
-        format!("{} 签到成功", self.name())
+        let msg = format!("{} 签到成功", self.name());
+        info!(
+            "{} 签到成功 (user {}，{}",
+            self.name(),
+            self.notice_receiver(),
+            msg
+        );
+        msg
     }
 
     fn success_body(&self, _outcome: &Self::Outcome) -> String {
@@ -38,9 +44,15 @@ pub trait Signer: Sized {
     }
 
     fn fail_msg(&self, e: &Error) -> String {
-        debug!("{} 签到失败 (user {})", self.name(), self.notice_receiver());
+        let msg = format!("【签到失败】{} 签到失败，请手动补签！", self.name());
+        warn!(
+            "{} 签到失败 (user {})：{}",
+            self.name(),
+            self.notice_receiver(),
+            msg
+        );
         debug!("错误原因：{}", e);
-        format!("【签到失败】{} 签到失败，请手动补签！", self.name())
+        msg
     }
 
     fn fail_body(&self, e: &Error) -> String {
@@ -50,4 +62,5 @@ pub trait Signer: Sized {
 
 pub mod genshin;
 pub mod nexus_pt;
+pub mod sspanel;
 pub mod v2ex;

@@ -70,5 +70,7 @@ async fn main() -> Result<()> {
 
     run::<signers::v2ex::Signer, _, _, _>(config.v2ex, &notifier).await;
 
+    run::<signers::sspanel::Signer, _, _, _>(config.sspanel, &notifier).await;
+
     Ok(())
 }
