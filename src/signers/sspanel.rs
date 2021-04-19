@@ -77,6 +77,10 @@ impl super::Signer for Signer {
         warn!("{}", data.msg);
         return Err(anyhow!("签到失败：{}", data.msg));
     }
+
+    fn success_body(&self, outcome: &String) -> String {
+        outcome.clone()
+    }
 }
 
 #[derive(Debug, Deserialize)]
