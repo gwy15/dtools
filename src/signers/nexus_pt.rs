@@ -1,6 +1,6 @@
 use super::prelude::*;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Config {
     /// PT 站的域名，如 `ourbits.club`
     domain: String,
@@ -50,8 +50,8 @@ impl super::Signer for Signer {
 
         Ok(Self {
             client,
-            domain: config.domain.clone(),
-            email: config.email.clone(),
+            domain: config.domain,
+            email: config.email,
         })
     }
 

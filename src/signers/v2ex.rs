@@ -1,7 +1,6 @@
 use super::prelude::*;
-use utils;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Config {
     cookies: String,
     email: String,
@@ -56,16 +55,22 @@ impl super::Signer for Signer {
         let result = redeem_regex
             .captures(&text)
             .and_then(|cap| cap.get(0))
-            .map(|m| m.as_str())
+            .map(|m| {
+                let path = m.as_str();
+                debug!("redeem url: {}", path);
+                path
+            })
             .ok_or_else(|| anyhow!("Failed to find redeem once token."))?;
-        let resp = self.client.get(Self::url(result)).send().await?;
-        debug!("redeem response: {:?}", resp.status());
-        let response_text = resp.text().await?;
-        trace!("response text: {}", response_text);
+
+        debug!("getting redeem url.");
+        let redeem_response = self.client.get(Self::url(result)).send().await?;
+        debug!("redeem response: {:?}", redeem_response.status());
+        let redeem_text = redeem_response.text().await?;
+        trace!("response text: {}", redeem_text);
 
         let reward_regex = Regex::new(r"已连续登录 \d+ 天")?;
         let reward_text = reward_regex
-            .captures(&response_text)
+            .captures(&redeem_text)
             .and_then(|cap| cap.get(0))
             .map(|m| m.as_str())
             .ok_or_else(|| anyhow!("没找到提示信息"))?;

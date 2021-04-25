@@ -1,6 +1,6 @@
 use super::prelude::*;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Config {
     domain: String,
     email: String,

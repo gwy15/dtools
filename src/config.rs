@@ -8,7 +8,7 @@ use std::{
 use crate::signers;
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Notification {
     pub sender: String,
     pub pswd: String,

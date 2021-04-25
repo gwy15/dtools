@@ -28,7 +28,7 @@ struct Character {
 }
 
 /// 配置
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Config {
     pub cookies: String,
     pub email: String,

@@ -14,11 +14,42 @@ use anyhow::Result;
 use config::Config;
 use notifier::Notifier;
 use signers::Signer;
+use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator, IntoStaticStr};
+
+#[derive(Debug, EnumString, AsRefStr, IntoStaticStr, EnumIter, Hash, PartialEq, Eq)]
+#[strum(serialize_all = "snake_case")]
+enum TaskType {
+    Genshin,
+    NexusPt,
+    SsPanel,
+    V2ex,
+}
+impl TaskType {
+    pub async fn run(self, config: &Config, notifier: &Notifier) {
+        match self {
+            TaskType::Genshin => {
+                run::<signers::genshin::Signer, _, _, _>(config.genshin.iter().cloned(), notifier)
+                    .await
+            }
+            TaskType::NexusPt => {
+                run::<signers::nexus_pt::Signer, _, _, _>(config.pt.iter().cloned(), notifier).await
+            }
+            TaskType::SsPanel => {
+                run::<signers::sspanel::Signer, _, _, _>(config.sspanel.iter().cloned(), notifier)
+                    .await
+            }
+            TaskType::V2ex => {
+                run::<signers::v2ex::Signer, _, _, _>(config.v2ex.iter().cloned(), notifier).await
+            }
+        }
+    }
+}
 
 async fn run<SignerImpl, Config, Outcome, It>(configs: It, notifier: &Notifier)
 where
     It: IntoIterator<Item = Config>,
     SignerImpl: Signer<Config = Config, Outcome = Outcome>,
+    Config: Clone,
 {
     for config in configs {
         let signer = SignerImpl::new(config);
@@ -62,15 +93,40 @@ async fn main() -> Result<()> {
     log4rs::init_file("./log4rs.yml", Default::default())?;
     debug!("logger initialized.");
     let config = Config::new()?;
-    let notifier = Notifier::new(config.notification);
+    let notifier = Notifier::new(config.notification.clone());
 
-    run::<signers::genshin::Signer, _, _, _>(config.genshin, &notifier).await;
+    let matches = clap::App::new(env!("CARGO_PKG_NAME"))
+        .version(env!("CARGO_PKG_VERSION"))
+        .arg(
+            clap::Arg::with_name("task")
+                .short("t")
+                .long("task")
+                .possible_value("all")
+                .possible_values(&TaskType::iter().map(|s| s.into()).collect::<Vec<_>>())
+                .takes_value(true)
+                .multiple(true)
+                .help("Run the given task type"),
+        )
+        .get_matches();
+    trace!("{:?}", matches);
 
-    run::<signers::nexus_pt::Signer, _, _, _>(config.pt, &notifier).await;
+    let mut tasks = std::collections::HashSet::new();
+    for task in matches.values_of("task").unwrap_or_default() {
+        debug!("task = {:?}", task);
+        if task == "all" {
+            for task in TaskType::iter() {
+                tasks.insert(task);
+            }
+            break;
+        }
+        let task: TaskType = task.parse().unwrap();
+        tasks.insert(task);
+    }
+    info!("Running tasks: {:?}", tasks);
 
-    run::<signers::v2ex::Signer, _, _, _>(config.v2ex, &notifier).await;
-
-    run::<signers::sspanel::Signer, _, _, _>(config.sspanel, &notifier).await;
+    for task in tasks {
+        task.run(&config, &notifier).await;
+    }
 
     Ok(())
 }
