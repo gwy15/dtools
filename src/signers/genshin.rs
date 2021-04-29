@@ -110,12 +110,15 @@ impl Signer {
             .send()
             .await?;
 
+        let text = response.text().await?;
+        debug!("response: {:?}", text);
+
         #[derive(Debug, Deserialize)]
         struct Response {
             pub retcode: i64,
             pub message: String,
         }
-        let response: Response = response.json().await?;
+        let response: Response = serde_json::from_str(&text)?;
         if response.retcode != 0 {
             error!("签到错误：{:?}", response);
             return Err(anyhow::anyhow!(
@@ -124,7 +127,7 @@ impl Signer {
                 response.message
             ));
         }
-        info!("角色 {} 签到成功", char.nickname);
+        info!("角色 {} 签到成功：{}", char.nickname, response.message);
         Ok(())
     }
 }
