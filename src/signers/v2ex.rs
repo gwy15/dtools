@@ -52,7 +52,7 @@ impl super::Signer for Signer {
         trace!("/mission/daily response text: {}", text);
         // find redeem
         let redeem_regex = Regex::new(r"/mission/daily/redeem\?once=\d+")?;
-        let result = redeem_regex
+        let redeem_url = redeem_regex
             .captures(&text)
             .and_then(|cap| cap.get(0))
             .map(|m| {
@@ -63,7 +63,15 @@ impl super::Signer for Signer {
             .ok_or_else(|| anyhow!("Failed to find redeem once token."))?;
 
         debug!("getting redeem url.");
-        let redeem_response = self.client.get(Self::url(result)).send().await?;
+        let redeem_response = self
+            .client
+            .get(Self::url(redeem_url))
+            .header(
+                header::REFERER,
+                HeaderValue::from_static("https://v2ex.com/mission/daily"),
+            )
+            .send()
+            .await?;
         debug!("redeem response: {:?}", redeem_response.status());
         let redeem_text = redeem_response.text().await?;
         trace!("response text: {}", redeem_text);
