@@ -35,9 +35,9 @@ strum = { version = "0.20", features = ["derive"] }
 
 [dependencies.request]
 package = "reqwest"
-version = "0.11.2"
+version = "0.11.3"
 default-features = false
-features = ["json", "socks", "cookies", "rustls"]
+features = ["json", "socks", "cookies", "rustls-tls"]
 
 [dependencies.lettre]
 version = "0.10.0-beta.4"
