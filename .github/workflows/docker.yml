@@ -19,3 +19,5 @@ jobs:
           docker login --username=${{secrets.docker_user}} ccr.ccs.tencentyun.com -p ${{ secrets.docker_pswd }}
           docker tag sign:${GITHUB_SHA} ccr.ccs.tencentyun.com/gwy15/sign:${GITHUB_REF##*/}
           docker push ccr.ccs.tencentyun.com/gwy15/sign:${GITHUB_REF##*/}
+          docker tag sign:${GITHUB_SHA} ccr.ccs.tencentyun.com/gwy15/sign:latest
+          docker push ccr.ccs.tencentyun.com/gwy15/sign:latest
