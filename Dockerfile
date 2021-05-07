@@ -1,11 +1,11 @@
 # build
-FROM rust:slim as builder
+FROM rust:slim-buster as builder
 WORKDIR /code
 COPY . .
 RUN cargo b --release
 
 # 
-FROM slim
+FROM debian:buster-slim
 WORKDIR /code
 COPY --from=builder /code/target/release/signer /bin/signer
 ENTRYPOINT [ "/bin/signer" ]
