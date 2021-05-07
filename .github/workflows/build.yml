@@ -1,0 +1,22 @@
+name: Build
+
+on:
+  push:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Print environment
+        run: echo "The event is ${{ github.event_name }}"
+      - name: Build in docker
+        run: docker build . -t sign:${GITHUB_SHA}
+      - name: Docker push
+        if: ${{ github.event_name == 'release' }}
+        run: |
+          docker login --username=${{secrets.docker_user}} ccr.ccs.tencentyun.com -p ${{ secrets.docker_pswd }}
+          docker tag sign:${GITHUB_SHA} ccr.ccs.tencentyun.com/gwy15/sign:${GITHUB_REF##*/}
+          docker push ccr.ccs.tencentyun.com/gwy15/sign:${GITHUB_REF##*/}
