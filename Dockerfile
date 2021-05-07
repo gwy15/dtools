@@ -7,6 +7,7 @@ RUN echo ${PWD} && cargo b --release && ls target/release
 # 
 FROM debian:buster-slim
 WORKDIR /code
-COPY --from=builder /code/target/release/sign /bin
-ENTRYPOINT [ "/bin/sign" ]
+COPY --from=builder /code/target/release/sign .
+COPY --from=builder /code/log4rs.yml .
+ENTRYPOINT [ "./sign" ]
 CMD ["--task=all"]
