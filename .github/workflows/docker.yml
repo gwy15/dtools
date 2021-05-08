@@ -10,7 +10,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Print environment
-        run: echo "The event is ${{ github.event_name }}"
+        run: |
+          echo "The event is ${{ github.event_name }}"
+          echo "${GITHUB_REF}"
+          echo "${GITHUB_REF##*/}"
       - name: Docker push to tencentyun docker mirror
         if: ${{ github.event_name == 'release' }}
         uses: elgohr/Publish-Docker-Github-Action@master
@@ -19,4 +22,5 @@ jobs:
           registry: ccr.ccs.tencentyun.com
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PSWD }}
-          tags: "${GITHUB_REF##*/},latest"
+          tags: "latest"
+          tag_semver: true
