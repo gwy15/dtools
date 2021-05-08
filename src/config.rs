@@ -25,10 +25,9 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new() -> anyhow::Result<Self> {
-        let reader = BufReader::new(
-            File::open("./settings.toml").context("Settings file (settings.toml) not found")?,
-        );
+    pub fn new(path: &str) -> anyhow::Result<Self> {
+        let f = File::open(path).context(format!("Settings file ({}) not found", path))?;
+        let reader = BufReader::new(f);
         Ok(Self::from_reader(reader)?)
     }
 }

@@ -1,5 +1,5 @@
 [package]
-name = "sign"
+name = "dtools"
 version = "0.1.2"
 authors = ["gwy15 <gwy15thu@gmail.com>"]
 edition = "2018"
@@ -23,6 +23,7 @@ anyhow = "1.0"
 
 log = "0.4.14"
 log4rs = "1.0.0"
+pretty_env_logger = "0.4.0"
 
 lazy_static = "1.4.0"
 
@@ -30,7 +31,7 @@ md5 = "0.7.0"
 uuid = { version = "0.8.2", features = ["v3"] }
 regex = "1.4.5"
 
-clap = "2.33.3"
+clap = "3.0.0-beta.2"
 strum = { version = "0.20", features = ["derive"] }
 
 [dependencies.request]

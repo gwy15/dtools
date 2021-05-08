@@ -11,13 +11,12 @@ jobs:
       - uses: actions/checkout@v2
       - name: Print environment
         run: echo "The event is ${{ github.event_name }}"
-      - name: Build in docker
-        run: docker build . -t sign:${GITHUB_SHA}
-      - name: Docker push
+      - name: Docker push to tencentyun docker mirror
         if: ${{ github.event_name == 'release' }}
-        run: |
-          docker login --username=${{secrets.docker_user}} ccr.ccs.tencentyun.com -p ${{ secrets.docker_pswd }}
-          docker tag sign:${GITHUB_SHA} ccr.ccs.tencentyun.com/gwy15/sign:${GITHUB_REF##*/}
-          docker push ccr.ccs.tencentyun.com/gwy15/sign:${GITHUB_REF##*/}
-          docker tag sign:${GITHUB_SHA} ccr.ccs.tencentyun.com/gwy15/sign:latest
-          docker push ccr.ccs.tencentyun.com/gwy15/sign:latest
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          name: gwy15/dtools
+          registry: ccr.ccs.tencentyun.com
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PSWD }}
+          tags: "${GITHUB_REF##*/},latest"
