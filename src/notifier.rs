@@ -7,14 +7,26 @@ use lettre::{
 
 pub struct Notifier {
     config: Config,
+    send: bool,
 }
 impl Notifier {
     pub fn new(config: Config) -> Self {
-        Self { config }
+        Self { config, send: true }
+    }
+
+    pub fn noop() -> Self {
+        Self {
+            config: Default::default(),
+            send: false,
+        }
     }
 
     #[allow(unused)]
     pub async fn notify(&self, receiver: &str, title: String, body: String) -> Result<()> {
+        if !self.send {
+            debug!("Notifier set as no-op. return.");
+            return Ok(());
+        }
         let message = Message::builder()
             .from(Mailbox::new(None, self.config.sender.parse()?))
             .to(Mailbox::new(None, receiver.parse()?))

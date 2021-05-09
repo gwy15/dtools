@@ -9,7 +9,7 @@ use crate::sign;
 use anyhow::Context;
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Default)]
 pub struct Notification {
     pub sender: String,
     pub pswd: String,

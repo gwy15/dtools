@@ -23,4 +23,3 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PSWD }}
           tags: "latest"
-          tag_semver: true

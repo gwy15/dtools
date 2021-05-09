@@ -20,6 +20,9 @@ struct Opts {
     #[clap(short, long, default_value = "settings.toml")]
     config: String,
 
+    #[clap(long, about = "Do not send email")]
+    no_send: bool,
+
     #[clap(subcommand)]
     subcmd: SubCommand,
 }
@@ -29,6 +32,7 @@ enum SubCommand {
     Sign {
         #[clap(long, about = "Sign all tasks")]
         all: bool,
+
         #[clap(short, long)]
         task: Vec<sign::TaskType>,
     },
@@ -52,7 +56,11 @@ async fn main() -> Result<()> {
     let opts: Opts = Opts::parse();
 
     let config = Config::new(&opts.config)?;
-    let notifier = Notifier::new(config.notification.clone());
+    let notifier = if opts.no_send {
+        Notifier::noop()
+    } else {
+        Notifier::new(config.notification.clone())
+    };
 
     match opts.subcmd {
         SubCommand::Sign { all, task: tasks } => {
