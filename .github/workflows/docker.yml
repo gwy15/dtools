@@ -4,8 +4,10 @@ on:
   release:
     types: [published]
   push:
-    branches: [main]
-    tags: ["*"]
+    branches:
+      - main
+    tags:
+      - '*'
 
 jobs:
   build:
