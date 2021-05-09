@@ -5,9 +5,8 @@ use std::{
     io::{BufReader, Read},
 };
 
-use crate::sign;
+use crate::{renamer, sign};
 use anyhow::Context;
-use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Clone, Default)]
 pub struct Notification {
@@ -22,6 +21,7 @@ pub struct Config {
     pub master: String,
     pub notification: Notification,
     pub sign: sign::Config,
+    pub renamer: renamer::Config,
 }
 
 impl Config {

@@ -2,9 +2,12 @@
 extern crate log;
 #[macro_use]
 extern crate anyhow;
+#[macro_use]
+extern crate serde;
 
 mod config;
 mod notifier;
+pub mod renamer;
 pub mod sign;
 
 use config::Config;
@@ -36,6 +39,8 @@ enum SubCommand {
         #[clap(short, long)]
         task: Vec<sign::TaskType>,
     },
+    #[clap(about = "Rename airport subscriptions")]
+    Rename,
 }
 
 #[tokio::main]
@@ -76,6 +81,9 @@ async fn main() -> Result<()> {
             for task in tasks {
                 task.run(&config.sign, &notifier).await;
             }
+        }
+        SubCommand::Rename => {
+            renamer::main(notifier, config.renamer).await?;
         }
     }
 

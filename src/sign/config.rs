@@ -1,5 +1,4 @@
 use super::signers;
-use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {

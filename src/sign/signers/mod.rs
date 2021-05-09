@@ -7,7 +7,6 @@ mod prelude {
         header::{self, HeaderMap, HeaderValue},
         Client,
     };
-    pub use serde::Deserialize;
     pub use serde_json::json;
 }
 

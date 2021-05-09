@@ -22,9 +22,15 @@ impl Notifier {
     }
 
     #[allow(unused)]
-    pub async fn notify(&self, receiver: &str, title: String, body: String) -> Result<()> {
+    pub async fn notify(
+        &self,
+        receiver: &str,
+        title: impl Into<String>,
+        body: String,
+    ) -> Result<()> {
         if !self.send {
-            debug!("Notifier set as no-op. return.");
+            debug!("Notifier set as no-op. print & return.");
+            debug!("title = {}, body = {}", title.into(), body);
             return Ok(());
         }
         let message = Message::builder()

@@ -1,4 +1,5 @@
 /target
+/cache
 
 logs
 settings.toml
