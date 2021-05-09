@@ -2,7 +2,7 @@
 FROM rust:slim-buster as builder
 WORKDIR /code
 COPY . .
-RUN echo ${PWD} && cargo b --release && ls target/release
+RUN cargo b --release && strip target/release/dtools
 
 # 
 FROM debian:buster-slim
