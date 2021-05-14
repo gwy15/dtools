@@ -7,6 +7,10 @@ pub struct Config {
     // 需要登录
     username: String,
     password: String,
+    #[serde(default)]
+    proxy: Option<String>,
+    #[serde(default)]
+    force_success_msg: Option<String>,
 }
 
 pub struct Signer {
@@ -23,7 +27,11 @@ impl super::Signer for Signer {
     type Config = Config;
     type Outcome = String;
     fn new(config: Self::Config) -> Result<Self> {
-        let client = utils::client_builder().build()?;
+        let mut builder = utils::client_builder();
+        if let Some(proxy) = config.proxy.clone() {
+            builder = builder.proxy(request::Proxy::all(proxy)?);
+        }
+        let client = builder.build()?;
         Ok(Self { client, config })
     }
 
@@ -71,6 +79,12 @@ impl super::Signer for Signer {
                     data.msg, traffic.today_used, traffic.unused
                 );
 
+                return Ok(msg);
+            }
+        }
+        if let Some(force_success) = &self.config.force_success_msg {
+            if data.msg.contains(force_success.as_str()) {
+                let msg = format!("{} 强制成功", self.config.domain);
                 return Ok(msg);
             }
         }
