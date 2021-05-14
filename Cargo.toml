@@ -1,6 +1,6 @@
 [package]
 name = "dtools"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["gwy15 <gwy15thu@gmail.com>"]
 edition = "2018"
 
