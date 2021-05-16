@@ -17,4 +17,4 @@ jobs:
       - name: Build
         run: |
           cargo check
-          cargo clippy
+          cargo clippy -- -D warnings
