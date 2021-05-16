@@ -1,4 +1,5 @@
 use anyhow::{bail, Result};
+use chrono::{DateTime, Utc};
 use std::{path::PathBuf, time::SystemTime};
 use tokio::fs;
 
@@ -16,9 +17,17 @@ pub struct Subscription {
     pub url: String,
     #[serde(default)]
     pub replacements: Vec<String>,
+    #[serde(default)]
+    pub expire: Option<DateTime<chrono::FixedOffset>>,
 }
 impl Subscription {
     pub async fn get(&self) -> Result<String> {
+        if let Some(t) = self.expire.as_ref() {
+            if &Utc::now() > t {
+                bail!("The subscription has expired, datetime = {}.", t);
+            }
+        }
+
         if let Some(parent) = self.cache.parent() {
             fs::create_dir_all(parent).await?;
         }

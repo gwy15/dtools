@@ -28,7 +28,7 @@ impl Config {
     pub fn new(path: &str) -> anyhow::Result<Self> {
         let f = File::open(path).context(format!("Settings file ({}) not found", path))?;
         let reader = BufReader::new(f);
-        Ok(Self::from_reader(reader)?)
+        Self::from_reader(reader)
     }
 }
 

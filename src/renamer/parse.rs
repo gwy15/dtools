@@ -144,32 +144,28 @@ impl Node {
     }
 
     fn from_ssr(body: &str) -> Result<Self> {
-        // 有的链接会用 _ 代替 ?，不知道为啥
         let s = atob(body, base64::URL_SAFE_NO_PAD)?;
-        let mut iter = s.split("?");
-        let path = iter
-            .next()
-            .ok_or_else(|| anyhow!("? not found in url"))?
-            .to_string();
-        let query_s = iter
-            .next()
-            .ok_or_else(|| anyhow!("? not found in url"))?
-            .to_string();
+
+        let (path, query_s) = s
+            .split_once('?')
+            .ok_or_else(|| anyhow!("? not found in url"))?;
 
         trace!("ssr url: path={:?} query={:?}", path, query_s);
 
         // parse query
         let mut query = HashMap::new();
-        for pair in query_s.split("&") {
-            let mut iter = pair.split("=");
-            let key = iter
-                .next()
+        for pair in query_s.split('&') {
+            let (key, value) = pair
+                .split_once('=')
                 .ok_or_else(|| anyhow!("= not found in segment"))?;
-            let value = iter.next().unwrap_or_default();
+
             query.insert(key.to_string(), value.to_string());
         }
 
-        Ok(Self::Ssr { path, query })
+        Ok(Self::Ssr {
+            path: path.to_string(),
+            query,
+        })
     }
 }
 

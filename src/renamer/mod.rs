@@ -3,9 +3,9 @@ mod parse;
 
 pub use config::Config;
 
-use anyhow::{Error, Result};
+use anyhow::Result;
 use config::Subscription;
-use std::path::PathBuf;
+use std::{collections::BTreeMap, path::PathBuf};
 use tokio::{
     fs,
     io::{AsyncWriteExt, BufWriter},
@@ -16,11 +16,9 @@ use crate::notifier::Notifier;
 async fn run(
     output: PathBuf,
     subscriptions: Vec<Subscription>,
-) -> Result<(Vec<(String, usize)>, Vec<(String, Error)>)> {
+) -> Result<BTreeMap<String, Result<usize>>> {
+    let mut results = BTreeMap::new();
     let mut nodes = vec![];
-
-    let mut ok = vec![];
-    let mut err = vec![];
 
     for sub in subscriptions {
         macro_rules! check {
@@ -29,7 +27,7 @@ async fn run(
                     Ok(ok) => ok,
                     Err(e) => {
                         warn!("机场 {} 失败：{:?}", sub.name, e);
-                        err.push((sub.name.clone(), e));
+                        results.insert(sub.name.clone(), Err(e));
                         continue;
                     }
                 }
@@ -41,7 +39,7 @@ async fn run(
 
         // output
         info!("{} has {} nodes.", airport.name, airport.nodes.len());
-        ok.push((airport.name, airport.nodes.len()));
+        results.insert(airport.name, Ok(airport.nodes.len()));
         nodes.extend(airport.nodes);
     }
     // write
@@ -56,7 +54,7 @@ async fn run(
     output_file.write_all(nodes_encoded.as_bytes()).await?;
 
     info!("done.");
-    Ok((ok, err))
+    Ok(results)
 }
 
 pub async fn main(notifier: Notifier, config: Config) -> Result<()> {
@@ -72,17 +70,25 @@ pub async fn main(notifier: Notifier, config: Config) -> Result<()> {
                 )
                 .await?;
         }
-        Ok((ok, err)) => {
-            let total_nodes: usize = ok.iter().map(|(_, cnt)| cnt).sum();
-            let title = if err.is_empty() {
+        Ok(results) => {
+            let total_nodes: usize = results.values().filter_map(|r| r.as_ref().ok()).sum();
+            let total_failed = results.values().filter(|r| r.is_err()).count();
+
+            let title = if total_failed == 0 {
                 format!("转换订阅链接成功，共 {} 个订阅", total_nodes)
             } else {
                 format!(
                     "转换订阅链接部分成功，共 {} 个订阅，{} 个机场失败",
-                    total_nodes,
-                    err.len()
+                    total_nodes, total_failed
                 )
             };
+
+            let ok = results
+                .iter()
+                .filter_map(|(k, v)| Some((k, v.as_ref().ok()?)));
+            let err = results
+                .iter()
+                .filter_map(|(k, v)| Some((k, v.as_ref().err()?)));
 
             let mut body = String::new();
             for (name, cnt) in ok {

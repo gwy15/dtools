@@ -47,13 +47,12 @@ enum SubCommand {
 async fn main() -> Result<()> {
     log4rs::init_file("./log4rs.yml", Default::default()).or_else(|_e| {
         pretty_env_logger::try_init()
-            .and_then(|_| {
+            .map(|_| {
                 debug!("log4rs not found, fallback to pretty_env_logger");
-                Ok(())
             })
-            .or_else(|e| {
+            .map_err(|e| {
                 eprintln!("Error init pretty_env_logger in fallback!");
-                Err(e)
+                e
             })
     })?;
     debug!("logger initialized.");
