@@ -20,7 +20,7 @@ impl Signer {
     pub fn regex_match(body: &str) -> Result<String, String> {
         let body = regex::Regex::new(r"<(/?)b>")
             .unwrap()
-            .replace_all(&body, "")
+            .replace_all(body, "")
             .replace(' ', "");
         let result_regex =
             regex::Regex::new(r"这是您的第\d+次签到，已连续签到\d+天，本次签到获得\d+个魔力值。")
