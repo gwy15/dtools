@@ -20,7 +20,13 @@ impl Airport {
         let mut nodes = vec![];
 
         for line in decoded.lines() {
-            let node: Node = line.parse()?;
+            let node: Node = match line.parse() {
+                Ok(n) => n,
+                Err(e) => {
+                    warn!("error parse protocol: {:?}. ignore.", e);
+                    continue;
+                }
+            };
             nodes.push(node);
         }
 
@@ -183,7 +189,7 @@ impl FromStr for Node {
             "vmess" => Self::from_vmess(body),
             "ssr" => Self::from_ssr(body),
             _ => {
-                println!("{:?} {:?}", protocol, body);
+                debug!("protocol={:?} body={:?}", protocol, body);
                 bail!("Unsupported protocol: {}", protocol)
             }
         }
